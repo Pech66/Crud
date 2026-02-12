@@ -1,0 +1,87 @@
+:root {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color-scheme: dark;
+  background-color: #1a1a1a;
+  color: #ffffff;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  justify-content: center; 
+  align-items: flex-start; 
+  padding-top: 50px;
+  min-height: 100vh;
+}
+
+.container {
+  width: 100%;
+  max-width: 450px;
+  background: #242424;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  text-align: center;
+}
+
+h1 {
+  color: #646cff;
+  font-size: 2.5rem;
+  margin-bottom: 1.5rem;
+}
+
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 2rem;
+}
+
+.input-group label {
+  font-weight: bold;
+  text-align: left;
+}
+
+input {
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #3f3f3f;
+  background: #1a1a1a;
+  color: white;
+}
+
+
+ul {
+  list-style: none;
+  padding: 0;
+  margin-top: 1rem;
+}
+
+li {
+  background: #2f2f2f;
+  margin-bottom: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Botones */
+button {
+  padding: 6px 12px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+
+button:hover {
+  opacity: 0.8;
+}
+
+.btn-primary { background-color: #646cff; color: white; padding: 10px; }
+.btn-edit { background-color: #4caf50; color: white; margin-right: 5px; }
+.btn-delete { background-color: #f44336; color: white; }
