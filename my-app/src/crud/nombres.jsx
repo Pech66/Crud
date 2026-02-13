@@ -8,11 +8,24 @@ const Nombres = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+  const MAX_LEN = 25;
+  const MIN_LEN = 3;
+
+  const normalizarTexto = (str) => {
+    return str
+      .replace(/[\u200B-\u200D\uFEFF]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
 
   const limpiarTexto = (str) => {
-    return str
+    return normalizarTexto(str)
       .replace(/[<>]/g, '')
       .replace(/&/g, '');
+  };
+
+  const filtrarPermitidos = (str) => {
+    return str.replace(/[^a-zA-ZñÑáéíóúÁÉÍÓÚ\s]/g, '');
   };
 
   const contieneContenidoPeligroso = (str) => {
@@ -24,6 +37,8 @@ const Nombres = () => {
       /on\w+\s*=/,
       /<\s*img/,
       /<\s*iframe/,
+      /data\s*:/,
+      /base64/, 
     ];
     return patrones.some((patron) => patron.test(lower));
   };
@@ -43,7 +58,14 @@ const Nombres = () => {
         throw new Error('Error al cargar datos.');
       }
       const data = await response.json();
-      setLista(Array.isArray(data) ? data : []);
+      const limpia = Array.isArray(data)
+        ? data.map((item) => ({
+            ...item,
+            texto: filtrarPermitidos(limpiarTexto(String(item?.texto || '')))
+              .slice(0, MAX_LEN),
+          }))
+        : [];
+      setLista(limpia);
     } catch (err) {
       setError('No se pudo cargar la lista.');
     } finally {
@@ -61,8 +83,8 @@ const Nombres = () => {
       return;
     }
 
-    const nombreLimpio = limpiarTexto(nombre.trim());
-    const nombreFinal = nombreLimpio.slice(0, 25);
+    const nombreLimpio = limpiarTexto(nombre);
+    const nombreFinal = filtrarPermitidos(nombreLimpio).slice(0, MAX_LEN);
 
     const regexSoloLetras = /^[a-zA-ZñÑáéíóúÁÉÍÓÚ\s]*$/;
 
@@ -81,8 +103,8 @@ const Nombres = () => {
       return;
     }
 
-    if (nombreFinal.length < 3) {
-      alert('Debe tener al menos 3 caracteres.');
+    if (nombreFinal.length < MIN_LEN) {
+      alert(`Debe tener al menos ${MIN_LEN} caracteres.`);
       return;
     }
 
@@ -172,12 +194,13 @@ const Nombres = () => {
             <input
               type="text"
               id="nombre"
-              maxLength="25"
+              maxLength={MAX_LEN}
               placeholder="Escribe un nombre..."
               value={nombre}
               onChange={(e) => {
-                const value = e.target.value.replace(/[<>]/g, '');
-                setNombre(value);
+                const raw = e.target.value;
+                const limpio = filtrarPermitidos(limpiarTexto(raw)).slice(0, MAX_LEN);
+                setNombre(limpio);
               }}
               pattern="[a-zA-ZñÑáéíóúÁÉÍÓÚ\s]+"
             />
@@ -191,7 +214,7 @@ const Nombres = () => {
           </button>
         </div>
         <p className="helper">
-          Solo letras y espacios. Minimo 5 caracteres. Maximo 25.
+          Solo letras y espacios. Minimo {MIN_LEN} caracteres. Maximo {MAX_LEN}.
         </p>
       </section>
 
