@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 const Nombres = () => {
   const [nombre, setNombre] = useState('');
@@ -10,6 +10,9 @@ const Nombres = () => {
   const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
   const MAX_LEN = 25;
   const MIN_LEN = 3;
+  const didLoadRef = useRef(false);
+  const lastActionRef = useRef(0);
+  const COOLDOWN_MS = 5000;
 
   const normalizarTexto = (str) => {
     return str
@@ -43,6 +46,28 @@ const Nombres = () => {
     return patrones.some((patron) => patron.test(lower));
   };
 
+  const esperar = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  const fetchConReintento = async (url, options = {}, retries = 1) => {
+    const response = await fetch(url, options);
+    if (response.status === 429 && retries > 0) {
+      setError('Demasiadas solicitudes. Espera 5 segundos y reintenta.');
+      await esperar(COOLDOWN_MS);
+      return fetchConReintento(url, options, retries - 1);
+    }
+    return response;
+  };
+
+  const puedeEjecutarAccion = () => {
+    const ahora = Date.now();
+    if (ahora - lastActionRef.current < COOLDOWN_MS) {
+      setError('Espera 5 segundos antes de volver a intentar.');
+      return false;
+    }
+    lastActionRef.current = ahora;
+    return true;
+  };
+
   const cargarLista = async () => {
     if (!API_BASE) {
       setError('Falta configurar VITE_API_URL.');
@@ -53,7 +78,7 @@ const Nombres = () => {
     setError('');
 
     try {
-      const response = await fetch(`${API_BASE}/crud`);
+      const response = await fetchConReintento(`${API_BASE}/crud`, {}, 1);
       if (!response.ok) {
         throw new Error('Error al cargar datos.');
       }
@@ -74,6 +99,8 @@ const Nombres = () => {
   };
 
   useEffect(() => {
+    if (didLoadRef.current) return;
+    didLoadRef.current = true;
     cargarLista();
   }, []);
 
@@ -82,6 +109,8 @@ const Nombres = () => {
       alert('Falta configurar VITE_API_URL.');
       return;
     }
+
+    if (!puedeEjecutarAccion()) return;
 
     const nombreLimpio = limpiarTexto(nombre);
     const nombreFinal = filtrarPermitidos(nombreLimpio).slice(0, MAX_LEN);
@@ -114,13 +143,17 @@ const Nombres = () => {
     try {
       const url = editingId ? `${API_BASE}/crud/${editingId}` : `${API_BASE}/crud`;
       const method = editingId ? 'PUT' : 'POST';
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetchConReintento(
+        url,
+        {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ texto: nombreFinal }),
         },
-        body: JSON.stringify({ texto: nombreFinal }),
-      });
+        1
+      );
 
       if (!response.ok) {
         throw new Error('Error al guardar.');
@@ -147,13 +180,19 @@ const Nombres = () => {
       return;
     }
 
+    if (!puedeEjecutarAccion()) return;
+
     setSubmitting(true);
     setError('');
 
     try {
-      const response = await fetch(`${API_BASE}/crud/${id}`, {
-        method: 'DELETE',
-      });
+      const response = await fetchConReintento(
+        `${API_BASE}/crud/${id}`,
+        {
+          method: 'DELETE',
+        },
+        1
+      );
 
       if (!response.ok) {
         throw new Error('Error al eliminar.');
