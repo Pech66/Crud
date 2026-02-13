@@ -81,8 +81,8 @@ const Nombres = () => {
       return;
     }
 
-    if (nombreFinal.length < 5) {
-      alert('Debe tener al menos 5 caracteres.');
+    if (nombreFinal.length < 3) {
+      alert('Debe tener al menos 3 caracteres.');
       return;
     }
 
